@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { getGoogleLoginUrl } from '../lib/socialAuth';
 
 export const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -29,12 +30,12 @@ export const RegisterPage = () => {
     setSuccess('');
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Las contrasenas no coinciden');
+      setError('Las contraseñas no coinciden');
       return;
     }
 
     if (formData.password.length < 8) {
-      setError('La contrasena debe tener al menos 8 caracteres');
+      setError('La contraseña debe tener al menos 8 caracteres');
       return;
     }
 
@@ -50,7 +51,7 @@ export const RegisterPage = () => {
     if (result.success) {
       const message =
         result.message ||
-        'Cuenta creada correctamente. Revisa tu correo para verificar antes de iniciar sesion.';
+        'Cuenta creada correctamente. Revisa tu correo para verificar antes de iniciar sesión.';
 
       setSuccess(message);
       setTimeout(() => {
@@ -66,17 +67,21 @@ export const RegisterPage = () => {
     setLoading(false);
   };
 
+  const handleGoogleRegister = () => {
+    window.location.assign(getGoogleLoginUrl());
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
       <div className="card max-w-md w-full">
         <div className="text-center mb-8">
           <img
             src="/images/logo.png"
-            alt="Parroquia San Francisco de Asis"
+            alt="Parroquia San Francisco de Asís"
             className="h-24 w-auto mx-auto mb-4"
           />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Crear Cuenta</h1>
-          <p className="text-gray-600">Unete a nuestra comunidad parroquial</p>
+          <p className="text-gray-600">Únete a nuestra comunidad parroquial</p>
         </div>
 
         {success && (
@@ -115,7 +120,7 @@ export const RegisterPage = () => {
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Correo Electronico
+              Correo electrónico
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -134,7 +139,7 @@ export const RegisterPage = () => {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Contrasena
+              Contraseña
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -154,7 +159,7 @@ export const RegisterPage = () => {
 
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-              Confirmar Contrasena
+              Confirmar contraseña
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -191,11 +196,25 @@ export const RegisterPage = () => {
           </button>
         </form>
 
+        <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-gray-400">
+          <div className="h-px flex-1 bg-gray-200" />
+          <span>o continua con</span>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGoogleRegister}
+          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+        >
+          Registrarse con Google
+        </button>
+
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            Ya tienes una cuenta?{' '}
+            ¿Ya tienes una cuenta?{' '}
             <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
-              Inicia sesion aqui
+              Inicia sesión aquí
             </Link>
           </p>
         </div>

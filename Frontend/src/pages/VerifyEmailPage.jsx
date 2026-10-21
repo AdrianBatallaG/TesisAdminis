@@ -6,7 +6,7 @@ import { AlertCircle, CheckCircle2 } from 'lucide-react';
 export const VerifyEmailPage = () => {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState('loading');
-  const [message, setMessage] = useState('Validando enlace de verificacion...');
+  const [message, setMessage] = useState('Validando enlace de verificación...');
 
   const verificationData = useMemo(
     () => ({
@@ -22,7 +22,7 @@ export const VerifyEmailPage = () => {
     const verify = async () => {
       if (!verificationData.id || !verificationData.hash || !verificationData.expires || !verificationData.signature) {
         setStatus('error');
-        setMessage('El enlace de verificacion esta incompleto o es invalido.');
+        setMessage('El enlace de verificación está incompleto o es inválido.');
         return;
       }
 
@@ -42,7 +42,7 @@ export const VerifyEmailPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
       <div className="card max-w-lg w-full">
-        <h1 className="text-2xl font-bold mb-4">Verificacion de correo</h1>
+        <h1 className="text-2xl font-bold mb-4">Verificación de correo</h1>
 
         {status === 'loading' && (
           <div className="flex items-center gap-3 text-gray-700">
@@ -57,7 +57,7 @@ export const VerifyEmailPage = () => {
             <div>
               <p className="text-green-800 text-sm">{message}</p>
               <Link to="/login" className="inline-block mt-3 text-sm text-sage-700 hover:text-sage-900 font-medium">
-                Ir a iniciar sesion
+                Ir a iniciar sesión
               </Link>
             </div>
           </div>
@@ -69,7 +69,7 @@ export const VerifyEmailPage = () => {
             <div>
               <p className="text-red-800 text-sm">{message}</p>
               <Link to="/login" className="inline-block mt-3 text-sm text-sage-700 hover:text-sage-900 font-medium">
-                Volver a iniciar sesion
+                Volver a iniciar sesión
               </Link>
             </div>
           </div>

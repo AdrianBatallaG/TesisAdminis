@@ -12,11 +12,29 @@ class EnsureRole
     /**
      * @param  Closure(Request): (Response)  $next
      */
-    public function handle(Request $request, Closure $next, string $role): Response
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         $user = $request->user();
+        $roles = array_values(
+            array_filter(
+                array_map(
+                    static fn (string $value): string => trim($value),
+                    $roles
+                )
+            )
+        );
+        $hasAllowedRole = false;
 
-        if (! $user || ! $user->hasRole($role)) {
+        if ($user && ! empty($roles)) {
+            foreach ($roles as $allowedRole) {
+                if ($user->hasRole($allowedRole)) {
+                    $hasAllowedRole = true;
+                    break;
+                }
+            }
+        }
+
+        if (! $user || empty($roles) || ! $hasAllowedRole) {
             return new JsonResponse([
                 'message' => 'No tienes permisos para acceder a este recurso.',
             ], 403);

@@ -54,6 +54,9 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+    'parish_priest_name' => env('PARISH_PRIEST_NAME', 'Pbro. Responsable'),
+    'parish_signature_title' => env('PARISH_SIGNATURE_TITLE', 'Párroco'),
+    'parish_digital_seal' => env('PARISH_DIGITAL_SEAL', 'PARROQUIA SAN FRANCISCO DE ASIS'),
 
     /*
     |--------------------------------------------------------------------------
@@ -66,7 +69,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'America/Guayaquil'),
 
     /*
     |--------------------------------------------------------------------------

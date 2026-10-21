@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class RolesAndUsersSeeder extends Seeder
@@ -19,34 +19,110 @@ class RolesAndUsersSeeder extends Seeder
             Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
         }
 
-        $admin = User::firstOrCreate(
-            ['email' => env('DEFAULT_ADMIN_EMAIL', 'admin@example.com')],
-            [
-                'name' => env('DEFAULT_ADMIN_NAME', 'Administrador'),
-                'password' => env('DEFAULT_ADMIN_PASSWORD', 'admin12345'),
-                'email_verified_at' => now(),
-            ]
-        );
-        $admin->syncRoles(['admin']);
+        $permissions = [
+            'dashboard.view',
+            'sacraments.view',
+            'sacraments.create',
+            'sacraments.update',
+            'sacraments.delete',
+            'sacraments.certificate',
+            'sacraments.request_certificate',
+            'sacraments.view_own',
+            'members.view',
+            'members.create',
+            'members.update',
+            'members.delete',
+            'events.view',
+            'events.create',
+            'events.update',
+            'events.delete',
+            'events.attendance',
+            'visits.view',
+            'visits.create',
+            'visits.update',
+            'visits.delete',
+            'schedules.view',
+            'schedules.create',
+            'schedules.update',
+            'schedules.delete',
+            'finance.view',
+            'finance.create',
+            'finance.update',
+            'finance.delete',
+            'finance.donate_public',
+            'finance.receipt_own',
+            'content.view',
+            'content.create',
+            'content.update',
+            'content.delete',
+            'users.view',
+            'users.manage_roles',
+            'users.block_activity',
+            'users.delete',
+            'reports.view',
+            'reports.export',
+            'audit.view',
+            'profile.view_own',
+            'profile.update_own',
+        ];
 
-        $editor = User::firstOrCreate(
-            ['email' => env('DEFAULT_EDITOR_EMAIL', 'editor@example.com')],
-            [
-                'name' => env('DEFAULT_EDITOR_NAME', 'Editor'),
-                'password' => env('DEFAULT_EDITOR_PASSWORD', 'editor12345'),
-                'email_verified_at' => now(),
-            ]
-        );
-        $editor->syncRoles(['editor']);
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+        }
 
-        $usuario = User::firstOrCreate(
-            ['email' => env('DEFAULT_USER_EMAIL', 'usuario@example.com')],
-            [
-                'name' => env('DEFAULT_USER_NAME', 'Usuario'),
-                'password' => env('DEFAULT_USER_PASSWORD', 'usuario12345'),
-                'email_verified_at' => now(),
-            ]
-        );
-        $usuario->syncRoles(['usuario']);
+        /** @var Role $adminRole */
+        $adminRole = Role::query()->where('name', 'admin')->firstOrFail();
+        /** @var Role $editorRole */
+        $editorRole = Role::query()->where('name', 'editor')->firstOrFail();
+        /** @var Role $usuarioRole */
+        $usuarioRole = Role::query()->where('name', 'usuario')->firstOrFail();
+
+        $adminRole->syncPermissions($permissions);
+        $editorRole->syncPermissions([
+            'dashboard.view',
+            'sacraments.view',
+            'sacraments.create',
+            'sacraments.update',
+            'sacraments.certificate',
+            'members.view',
+            'members.create',
+            'members.update',
+            'events.view',
+            'events.create',
+            'events.update',
+            'events.attendance',
+            'visits.view',
+            'visits.create',
+            'visits.update',
+            'schedules.view',
+            'schedules.create',
+            'schedules.update',
+            'finance.view',
+            'finance.create',
+            'finance.update',
+            'content.view',
+            'content.create',
+            'content.update',
+            'reports.view',
+            'reports.export',
+            'profile.view_own',
+            'profile.update_own',
+            'sacraments.view_own',
+            'finance.receipt_own',
+        ]);
+        $usuarioRole->syncPermissions([
+            'content.view',
+            'events.view',
+            'visits.view',
+            'schedules.view',
+            'finance.donate_public',
+            'finance.receipt_own',
+            'sacraments.request_certificate',
+            'sacraments.view_own',
+            'profile.view_own',
+            'profile.update_own',
+        ]);
+
+        $this->command?->info('Seeder completado: roles y permisos sincronizados. Usa php artisan users:create-admin para crear el primer acceso.');
     }
 }

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, Mail, Lock, AlertCircle, Send, CheckCircle2 } from 'lucide-react';
+import { getGoogleLoginUrl, getSocialErrorMessage } from '../lib/socialAuth';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -14,6 +15,10 @@ export const LoginPage = () => {
   const { login, resendVerificationEmail } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const socialError = useMemo(() => {
+    const searchParams = new URLSearchParams(location.search);
+    return getSocialErrorMessage(searchParams.get('social_error'));
+  }, [location.search]);
 
   const locationMessage = useMemo(() => location.state?.message || '', [location.state]);
 
@@ -27,9 +32,10 @@ export const LoginPage = () => {
     const result = await login(email, password);
 
     if (result.success) {
-      navigate('/dashboard');
+      const landingRoute = result.role === 'usuario' ? '/' : '/dashboard';
+      navigate(landingRoute);
     } else {
-      setError(result.error || 'Error al iniciar sesion');
+      setError(result.error || 'Error al iniciar sesión');
       if (result.code === 'EMAIL_NOT_VERIFIED') {
         setShowResend(true);
       }
@@ -46,12 +52,16 @@ export const LoginPage = () => {
     const result = await resendVerificationEmail(email);
 
     if (result.success) {
-      setInfo(result.message || 'Correo de verificacion reenviado.');
+      setInfo(result.message || 'Correo de verificación reenviado.');
     } else {
-      setError(result.error || 'No se pudo reenviar el correo de verificacion.');
+      setError(result.error || 'No se pudo reenviar el correo de verificación.');
     }
 
     setSendingVerification(false);
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.assign(getGoogleLoginUrl());
   };
 
   return (
@@ -60,11 +70,11 @@ export const LoginPage = () => {
         <div className="text-center mb-8">
           <img
             src="/images/logo.png"
-            alt="Parroquia San Francisco de Asis"
+            alt="Parroquia San Francisco de Asís"
             className="h-24 w-auto mx-auto mb-4"
           />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Iniciar Sesion</h1>
-          <p className="text-gray-600">Parroquia San Francisco de Asis - Calderon</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Iniciar sesión</h1>
+          <p className="text-gray-600">Parroquia San Francisco de Asís - Calderón</p>
         </div>
 
         {locationMessage && (
@@ -88,10 +98,17 @@ export const LoginPage = () => {
           </div>
         )}
 
+        {socialError && !error && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+            <AlertCircle className="text-amber-500 flex-shrink-0 mt-0.5" size={20} />
+            <p className="text-sm text-amber-800">{socialError}</p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Correo Electronico
+              Correo electrónico
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -109,7 +126,7 @@ export const LoginPage = () => {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Contrasena
+              Contraseña
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -123,6 +140,11 @@ export const LoginPage = () => {
                 required
               />
             </div>
+            <div className="text-right mt-2">
+              <Link to="/forgot-password" className="text-sm text-sage-700 hover:text-sage-900 font-medium">
+                Olvidé mi contraseña
+              </Link>
+            </div>
           </div>
 
           <button
@@ -133,16 +155,30 @@ export const LoginPage = () => {
             {loading ? (
               <>
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                <span>Iniciando sesion...</span>
+                <span>Iniciando sesión...</span>
               </>
             ) : (
               <>
                 <LogIn size={20} />
-                <span>Iniciar Sesion</span>
+                <span>Iniciar sesión</span>
               </>
             )}
           </button>
         </form>
+
+        <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-gray-400">
+          <div className="h-px flex-1 bg-gray-200" />
+          <span>o continua con</span>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+        >
+          Continuar con Google
+        </button>
 
         {showResend && (
           <button
@@ -159,7 +195,7 @@ export const LoginPage = () => {
             ) : (
               <>
                 <Send size={18} />
-                <span>Reenviar verificacion</span>
+                <span>Reenviar verificación</span>
               </>
             )}
           </button>
@@ -167,9 +203,9 @@ export const LoginPage = () => {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            No tienes una cuenta?{' '}
+            ¿No tienes una cuenta?{' '}
             <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
-              Registrate aqui
+              Regístrate aquí
             </Link>
           </p>
         </div>

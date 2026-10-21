@@ -25,12 +25,21 @@ class VerifyEmailNotification extends Notification
     {
         $verificationUrl = $this->verificationUrl($notifiable);
         $frontUrl = rtrim((string) config('app.frontend_url', 'http://localhost:5173'), '/');
-        $query = parse_url($verificationUrl, PHP_URL_QUERY);
-        $frontendVerificationUrl = $frontUrl.'/verify-email'.($query ? "?{$query}" : '');
+        $query = parse_url($verificationUrl, PHP_URL_QUERY) ?? '';
+        parse_str($query, $signedQueryParams);
+
+        $frontendParams = array_filter([
+            'id' => (string) $notifiable->getKey(),
+            'hash' => sha1($notifiable->getEmailForVerification()),
+            'expires' => $signedQueryParams['expires'] ?? null,
+            'signature' => $signedQueryParams['signature'] ?? null,
+        ], static fn ($value): bool => $value !== null && $value !== '');
+
+        $frontendVerificationUrl = $frontUrl.'/verify-email?'.http_build_query($frontendParams);
 
         return (new MailMessage)
-            ->subject('Verifica tu correo electronico')
-            ->line('Gracias por registrarte. Debes verificar tu correo para iniciar sesion.')
+            ->subject('Verifica tu correo electrónico')
+            ->line('Gracias por registrarte. Debes verificar tu correo para iniciar sesión.')
             ->action('Verificar correo', $frontendVerificationUrl)
             ->line('Si no creaste esta cuenta, ignora este mensaje.');
     }

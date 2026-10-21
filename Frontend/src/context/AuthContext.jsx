@@ -1,9 +1,10 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { authService } from '../services/authService';
 
 const AuthContext = createContext(null);
 
-const USE_MOCK_AUTH = String(import.meta.env.VITE_USE_MOCK_AUTH || 'false').toLowerCase() === 'true';
+const USE_MOCK_AUTH =
+  !import.meta.env.PROD && String(import.meta.env.VITE_USE_MOCK_AUTH || 'false').toLowerCase() === 'true';
 
 const normalizeRole = (role) => {
   const normalized = String(role || '').toLowerCase();
@@ -28,9 +29,16 @@ const normalizeUser = (user) => {
     return null;
   }
 
+  const permissions = Array.isArray(user.permissions)
+    ? user.permissions
+        .map((permission) => String(permission || '').trim())
+        .filter((permission) => permission.length > 0)
+    : [];
+
   return {
     ...user,
     role: normalizeRole(user.role),
+    permissions,
   };
 };
 
@@ -40,9 +48,8 @@ const roleHierarchy = {
   admin: 3,
 };
 
-const clearStoredAuth = () => {
-  localStorage.removeItem('user');
-  localStorage.removeItem('token');
+const clearMockAuth = () => {
+  localStorage.removeItem('mock-user');
 };
 
 export const useAuth = () => {
@@ -61,61 +68,45 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const restoreSession = async () => {
-      const storedUser = localStorage.getItem('user');
-      const token = localStorage.getItem('token');
-
-      if (!storedUser || !token) {
-        setLoading(false);
-        return;
-      }
-
       try {
         if (USE_MOCK_AUTH) {
-          const parsedUser = JSON.parse(storedUser);
-          const normalizedUser = normalizeUser(parsedUser);
+          const storedUser = localStorage.getItem('mock-user');
 
-          if (normalizedUser) {
-            setUser(normalizedUser);
+          if (storedUser) {
+            const normalizedUser = normalizeUser(JSON.parse(storedUser));
+
+            if (normalizedUser) {
+              setUser(normalizedUser);
+            }
           }
 
-          setLoading(false);
           return;
         }
 
         const profile = await authService.getProfile();
-        const normalizedUser = normalizeUser(profile.user);
-
-        if (!normalizedUser) {
-          clearStoredAuth();
-          setUser(null);
-          setLoading(false);
-          return;
-        }
+        const normalizedUser = normalizeUser(profile?.user);
 
         setUser(normalizedUser);
-        localStorage.setItem('user', JSON.stringify(normalizedUser));
       } catch (error) {
-        clearStoredAuth();
+        clearMockAuth();
         setUser(null);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
+    const handleUnauthorized = () => {
+      clearMockAuth();
+      setUser(null);
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
     restoreSession();
+
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    };
   }, []);
-
-  const persistAuth = (userData, token) => {
-    const normalizedUser = normalizeUser(userData);
-
-    if (!normalizedUser || !token) {
-      throw new Error('Respuesta de autenticacion invalida');
-    }
-
-    setUser(normalizedUser);
-    localStorage.setItem('user', JSON.stringify(normalizedUser));
-    localStorage.setItem('token', token);
-  };
 
   const setAuthenticatedUser = (userData) => {
     const normalizedUser = normalizeUser(userData);
@@ -125,7 +116,10 @@ export const AuthProvider = ({ children }) => {
     }
 
     setUser(normalizedUser);
-    localStorage.setItem('user', JSON.stringify(normalizedUser));
+
+    if (USE_MOCK_AUTH) {
+      localStorage.setItem('mock-user', JSON.stringify(normalizedUser));
+    }
   };
 
   const refreshProfile = async () => {
@@ -171,19 +165,16 @@ export const AuthProvider = ({ children }) => {
       const usuario = usuarios[email];
 
       if (usuario && usuario.password === password) {
-        const mockToken = `mock-token-${usuario.id}`;
+        const normalizedRole = normalizeRole(usuario.role);
 
-        persistAuth(
-          {
-            id: usuario.id,
-            name: usuario.name,
-            email: usuario.email,
-            role: usuario.role,
-          },
-          mockToken
-        );
+        setAuthenticatedUser({
+          id: usuario.id,
+          name: usuario.name,
+          email: usuario.email,
+          role: normalizedRole,
+        });
 
-        return { success: true };
+        return { success: true, role: normalizedRole };
       }
 
       return { success: false, error: 'Credenciales incorrectas' };
@@ -191,9 +182,26 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const data = await authService.login(email, password);
-      persistAuth(data.user, data.token);
+      setAuthenticatedUser(data.user);
+      const normalizedRole = normalizeRole(data?.user?.role);
 
-      return { success: true };
+      return { success: true, role: normalizedRole };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        code: error.code || null,
+      };
+    }
+  };
+
+  const completeSocialLogin = async (provider, ticket) => {
+    try {
+      const data = await authService.completeSocialLogin(provider, ticket);
+      setAuthenticatedUser(data.user);
+      const normalizedRole = normalizeRole(data?.user?.role);
+
+      return { success: true, role: normalizedRole };
     } catch (error) {
       return {
         success: false,
@@ -250,12 +258,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
-    clearStoredAuth();
+    clearMockAuth();
 
     if (!USE_MOCK_AUTH) {
-      authService.logout();
+      await authService.logout();
     }
   };
 
@@ -264,18 +272,36 @@ export const AuthProvider = ({ children }) => {
       return false;
     }
 
+    if (typeof requiredRole === 'string' && requiredRole.includes('.')) {
+      if (user.role === 'admin') {
+        return true;
+      }
+
+      return (user.permissions || []).includes(requiredRole);
+    }
+
     const userLevel = roleHierarchy[normalizeRole(user.role)] || 0;
     const requiredLevel = roleHierarchy[normalizeRole(requiredRole)] || 0;
 
     return userLevel >= requiredLevel;
   };
 
+  const hasAnyPermission = (permissions = []) => {
+    if (!user || !Array.isArray(permissions) || permissions.length === 0) {
+      return false;
+    }
+
+    return permissions.some((permission) => hasPermission(permission));
+  };
+
   const value = {
     user,
     login,
+    completeSocialLogin,
     register,
     logout,
     hasPermission,
+    hasAnyPermission,
     isAuthenticated: !!user,
     loading,
     resendVerificationEmail,

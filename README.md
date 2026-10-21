@@ -1,56 +1,34 @@
-# NewAdminis (Monoproyecto)
+# ADMINIS — Gestión parroquial
 
-Este repositorio contiene:
+Aplicación para administrar sacramentos, solicitudes, donaciones, contenidos y actividades parroquiales. Backend Laravel 12, frontend React/Vite y base de datos MySQL 8.4.
 
-- `API/`: backend Laravel 12 + Sanctum + roles + verificacion por Resend.
-- `Frontend/`: app React/Vite conectada a la API.
+## Desarrollo local
 
-## Levantar todo en local
+1. Copiar `.env.example` a `.env` en la raíz y definir contraseñas distintas para MySQL y root.
+2. Copiar `API/.env.example` a `API/.env` y configurar `DB_CONNECTION=mysql`, host, base y credenciales. No versionar los archivos `.env`.
+3. Iniciar la base: `docker compose up -d mysql`.
+4. En `API`: `composer install`, `php artisan key:generate`, `php artisan migrate --seed` y `php artisan users:create-admin`.
+5. Ejecutar `php artisan serve`, `php artisan queue:work` y `php artisan schedule:work`.
+6. En `Frontend`: `npm ci` y `npm run dev`. API en localhost:8000; interfaz en localhost:5173.
 
-1. Backend
+También se puede iniciar el entorno de desarrollo completo con `docker compose up -d --build`.
 
-```bash
-cd API
-copy .env.example .env
-composer install
-php artisan key:generate
-php artisan migrate --seed
-php artisan serve
-```
+## Importar una instalación SQLite existente
 
-2. Frontend
+- Detener escrituras, cola y scheduler antes de crear un respaldo consistente de SQLite. Conservar también `API/storage/app` y la clave `APP_KEY` original.
+- Configurar una base MySQL **nueva y vacía**. Ejecutar `php artisan migrate --force`, sin ejecutar seeders antes de importar.
+- Ejecutar `php artisan database:import-sqlite /ruta/absoluta/respaldo.sqlite`.
+- El comando conserva IDs, relaciones y hashes; compara cantidades de registros y realiza la copia en una transacción. No modifica el respaldo ni reemplaza tablas con datos. Se incluyen sesiones, tokens, cachés y auditoría; el historial de migraciones del destino lo establece Laravel al crear su esquema.
+- Verificar acceso, tickets, archivos y reportes antes de reanudar los servicios. Conservar el respaldo privado para recuperación.
 
-```bash
-cd Frontend
-copy .env.example .env
-npm install
-npm run dev
-```
+## Despliegue
 
-## URLs locales
+Consultar [la guía de despliegue](docs/DEPLOYMENT.md). Los archivos subidos y los datos personales **no** forman parte del repositorio.
 
-- API: `http://localhost:8000`
-- Frontend: `http://localhost:5173`
+## Validación
 
-## Laravel Cloud (monorepo)
+- `cd API && php artisan test` (base SQLite aislada en memoria para pruebas).
+- `cd Frontend && npm ci && npm run build`.
+- `cd Frontend && node --test src/services/bibleService.test.js`.
 
-Laravel Cloud detecta frameworks desde la raiz. Como la app Laravel vive en `API/`, este repositorio incluye un `composer.lock` en raiz para habilitar deteccion.
-
-En la app de Laravel Cloud usa un **Build Script** para desplegar desde `API/`:
-
-```bash
-mkdir /tmp/monorepo_tmp
-repos=("API" "Frontend")
-
-for item in "${repos[@]}"; do
-    mv $item /tmp/monorepo_tmp/
-done
-
-cp -Rf /tmp/monorepo_tmp/API/{.,}* .
-rm -rf /tmp/monorepo_tmp
-
-composer install --no-dev --optimize-autoloader
-php artisan package:discover --ansi
-php artisan config:cache
-php artisan route:cache
-```
+La aplicación usa MySQL; SQLite permanece como herramienta para importar instalaciones previas y ejecutar pruebas aisladas.

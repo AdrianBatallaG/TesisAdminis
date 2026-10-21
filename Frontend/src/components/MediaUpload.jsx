@@ -1,0 +1,12 @@
+import { useState, useRef, useEffect } from 'react';
+import { UploadCloud } from 'lucide-react';
+import api from '../services/apiClient';
+export const MediaUpload = ({ kind = 'resource', onUploaded }) => {
+ const rootRef = useRef(null);
+ const [busy,setBusy]=useState(false); const [message,setMessage]=useState(''); const [error,setError]=useState('');
+ useEffect(() => { const form = rootRef.current?.closest('form'); const guard = event => { event.preventDefault(); event.stopImmediatePropagation(); setError('Espera a que termine la subida antes de guardar.'); }; if (busy) form?.addEventListener('submit', guard, true); return () => form?.removeEventListener('submit', guard, true); }, [busy]);
+ const accept={image:'.jpg,.jpeg,.png,.webp',audio:'.mp3,.wav,.ogg,.m4a',video:'.mp4,.webm',resource:'.jpg,.jpeg,.png,.webp,.mp3,.wav,.ogg,.m4a,.mp4,.webm,.pdf'}[kind];
+ const upload=async e=>{const file=e.target.files?.[0];if(!file)return;setError('');setMessage('');if(file.size>(kind==='image'?5:50)*1024*1024){setError(`El archivo supera ${kind==='image'?5:50} MB.`);return;}setBusy(true);try{const data=new FormData();data.append('file',file);data.append('kind',kind);const response=await api.post('/media',data,{headers:{'Content-Type':'multipart/form-data'}});onUploaded(response.data.url);setMessage(file.name+' listo. Guarda el formulario para publicarlo.');}catch(err){setError(Object.values(err.response?.data?.errors||{}).flat()[0]||'No se pudo subir el archivo.');}finally{setBusy(false);e.target.value='';}};
+ return <div ref={rootRef} className="mt-2"><label className="inline-flex items-center gap-2 cursor-pointer rounded-md border border-sage-200 bg-sage-50 px-3 py-2 text-sm text-sage-700 focus-within:ring-2 focus-within:ring-sage-500"><UploadCloud size={18}/>{busy?'Subiendo…':'Subir archivo propio'}<input aria-label="Subir archivo propio" type="file" accept={accept} onChange={upload} disabled={busy} className="sr-only"/></label>{message&&<p role="status" className="mt-1 text-xs text-sage-700">{message}</p>}{error&&<p role="alert" className="mt-1 text-xs text-red-700">{error}</p>}</div>;
+};
+export const MediaPlayback = ({url,title}) => /\.(mp4|webm)(?:\?|$)/i.test(url||'') ? <video controls preload="metadata" src={url} title={title} className="w-full rounded-lg max-h-96"/> : /\.(mp3|wav|ogg|m4a)(?:\?|$)/i.test(url||'') ? <audio controls preload="metadata" src={url} className="w-full mt-3"/> : null;

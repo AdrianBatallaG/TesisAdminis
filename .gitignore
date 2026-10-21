@@ -1,0 +1,29 @@
+# Local secrets and data
+.env
+.env.*
+!.env.example
+!**/.env.example
+!**/.env.production.example
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sql
+*.sql.gz
+*.log
+# Dependencies and generated output
+**/node_modules/
+**/vendor/
+**/dist/
+/output/
+/tmp/
+*.pdf
+*.csv
+*.docx
+Frontend/public/prediseno-dashboard*.html
+# Private uploads and local verification files
+API/storage/**
+!API/storage/**/
+!API/storage/**/.gitignore
+API/bootstrap/cache/*.php
+/.local-backups/
+/.local-services/

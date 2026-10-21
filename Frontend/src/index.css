@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+.app-sidebar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 30;
+  width: min(18rem, 85vw);
+  background: white;
+  overflow: hidden auto;
+  visibility: hidden;
+  transform: translateX(-100%);
+  transition: transform 220ms ease, width 220ms ease, visibility 220ms;
+}
+.app-sidebar.is-open { visibility: visible; transform: translateX(0); border-right: 1px solid #e5e7eb; }
+.app-content { container-type: inline-size; }
+.home-hero { display: grid; grid-template-columns: minmax(0, 1fr); }
+.home-video { height: clamp(18rem, 55cqw, 32rem); }
+.home-services { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); }
+@container (min-width: 56rem) {
+  .home-hero { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-video { height: 37.5rem; }
+}
+@media (min-width: 1024px) {
+  .app-sidebar { position: relative; inset: auto; flex-shrink: 0; width: 0; transform: none; }
+  .app-sidebar.is-open { width: 18rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-sidebar { transition: none; }
+}
+
 @layer base {
   body {
     @apply bg-gray-50 text-gray-800 font-sans antialiased;
@@ -27,11 +55,11 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-sage-700 text-white px-6 py-3 rounded-md hover:bg-sage-800 transition-all shadow-sm hover:shadow-md font-medium text-sm;
+    @apply bg-sage-700 text-white px-4 py-2 rounded-md hover:bg-sage-800 transition-all shadow-sm hover:shadow-md font-medium text-sm;
   }
   
   .btn-secondary {
-    @apply bg-white text-sage-700 border border-gray-300 px-6 py-3 rounded-md hover:bg-gray-50 transition-all shadow-sm font-medium text-sm;
+    @apply bg-white text-sage-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-all shadow-sm font-medium text-sm;
   }
   
   .card {
@@ -46,7 +74,6 @@
     @apply border-t border-gray-200 my-8;
   }
   
-  /* Scrollbar elegante personalizado */
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -67,7 +94,6 @@
     background: linear-gradient(to bottom, #7d8d7e, #627263);
   }
   
-  /* Animaciones suaves */
   .fade-in {
     animation: fadeIn 0.5s ease-in;
   }
@@ -83,7 +109,6 @@
     }
   }
   
-  /* Mejora de legibilidad para texto largo */
   .prose {
     @apply leading-relaxed text-gray-700;
   }
@@ -92,3 +117,21 @@
     @apply mb-4;
   }
 }
+
+.dashboard-shell { container-type: inline-size; }
+.dashboard-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1rem; }
+.dashboard-columns { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr); gap:1.5rem; }
+.dashboard-columns > * { min-width:0; }
+@container (max-width: 1000px) { .dashboard-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .dashboard-columns { grid-template-columns:minmax(0,1fr); } }
+@container (max-width: 340px) { .dashboard-metrics { grid-template-columns:minmax(0,1fr); } }
+
+.event-calendar-layout { display:grid; grid-template-columns:minmax(0,1fr) 220px; gap:16px; }
+@container (max-width:800px) { .event-calendar-layout {grid-template-columns:minmax(0,1fr);} .event-calendar-layout > aside {grid-row:1;} }
+
+/* Reports adapt to the content width, including when the navigation is open. */
+.reports-layout { display:grid; grid-template-columns:minmax(0,1fr) 15rem; gap:1.25rem; align-items:start; }
+.reports-charts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.reports-layout .card { padding:1.25rem; }
+.reports-tools { position:sticky; top:0; }
+@container (max-width: 1050px) { .reports-charts { grid-template-columns:minmax(0,1fr); } }
+@container (max-width: 700px) { .reports-layout { grid-template-columns:minmax(0,1fr); } .reports-tools { position:static; grid-row:1; } }

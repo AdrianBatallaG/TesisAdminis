@@ -15,6 +15,8 @@ class User extends Authenticatable implements MustVerifyEmail
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
+    protected string $guard_name = 'web';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -24,6 +26,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'oauth_provider',
+        'oauth_provider_id',
+        'avatar_url',
+        'is_active',
+        'activity_blocked',
     ];
 
     /**
@@ -55,6 +62,8 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'activity_blocked' => 'boolean',
         ];
     }
 
@@ -68,3 +77,4 @@ class User extends Authenticatable implements MustVerifyEmail
         $this->notify(new VerifyEmailNotification());
     }
 }
+

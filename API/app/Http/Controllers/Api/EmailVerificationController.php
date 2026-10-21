@@ -15,7 +15,7 @@ class EmailVerificationController extends Controller
     {
         if (! URL::hasValidSignature($request)) {
             return response()->json([
-                'message' => 'El enlace de verificacion no es valido o ha expirado.',
+                'message' => 'El enlace de verificación no es válido o ha expirado.',
             ], 403);
         }
 
@@ -23,7 +23,7 @@ class EmailVerificationController extends Controller
 
         if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
             return response()->json([
-                'message' => 'El hash de verificacion no coincide.',
+                'message' => 'El hash de verificación no coincide.',
             ], 403);
         }
 
@@ -33,7 +33,7 @@ class EmailVerificationController extends Controller
         }
 
         return response()->json([
-            'message' => 'Correo verificado correctamente. Ya puedes iniciar sesion.',
+            'message' => 'Correo verificado correctamente. Ya puedes iniciar sesión.',
         ]);
     }
 
@@ -51,14 +51,14 @@ class EmailVerificationController extends Controller
 
         if ($user->hasVerifiedEmail()) {
             return response()->json([
-                'message' => 'Tu correo ya esta verificado.',
+                'message' => 'Tu correo ya está verificado.',
             ]);
         }
 
         $user->sendEmailVerificationNotification();
 
         return response()->json([
-            'message' => 'Enlace de verificacion reenviado.',
+            'message' => 'Enlace de verificación reenviado.',
         ]);
     }
 }

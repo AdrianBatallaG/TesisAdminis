@@ -1,0 +1,18 @@
+FROM php:8.4-apache
+WORKDIR /var/www/html
+RUN apt-get update && apt-get install -y --no-install-recommends libicu-dev libzip-dev libonig-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev unzip supervisor \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql mbstring intl gd zip bcmath opcache \
+    && a2enmod rewrite headers \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+COPY . .
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader \
+    && sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf \
+    && chown -R www-data:www-data storage bootstrap/cache
+COPY docker/apache-app.conf /etc/apache2/conf-enabled/app.conf
+COPY docker/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+COPY docker/supervisord.conf /etc/supervisor/conf.d/app.conf
+RUN chmod +x docker/start-production.sh
+EXPOSE 80
+CMD ["./docker/start-production.sh"]
